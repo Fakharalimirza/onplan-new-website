@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFavorites } from '@/context/favorites-context';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface PropertyCardProps {
   property: Property;
@@ -38,10 +39,10 @@ export default function PropertyCard({ property, view = 'grid' }: PropertyCardPr
   };
   
   const content = (
-    <Card className={cn("overflow-hidden transition-all duration-300 hover:shadow-xl", view === 'list' ? 'flex flex-col md:flex-row' : '')}>
-      <div className={cn("relative", view === 'list' ? 'md:w-1/3' : 'w-full')}>
+    <Card className={cn("overflow-hidden transition-all duration-300 hover:shadow-xl rounded-lg", view === 'list' ? 'flex flex-col md:flex-row' : '')}>
+      <div className={cn("relative overflow-hidden", view === 'list' ? 'md:w-1/3' : 'w-full')}>
         <Badge
-          className="absolute top-3 left-3 z-10"
+          className="absolute top-3 left-3 z-10 rounded-full px-3 py-1"
           variant={property.status === 'For Sale' ? 'default' : 'secondary'}
         >
           {property.status}
@@ -49,24 +50,24 @@ export default function PropertyCard({ property, view = 'grid' }: PropertyCardPr
         <Button
           size="icon"
           className={cn(
-            'absolute top-3 right-3 z-10 rounded-full h-9 w-9 transition-colors',
+            'absolute top-3 right-3 z-10 rounded-full h-9 w-9 transition-all duration-300 scale-100 hover:scale-110',
             favorite ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-white/80 text-foreground hover:bg-white'
           )}
           onClick={handleFavoriteClick}
           aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
         >
-          <Heart className={cn('h-5 w-5', favorite && 'fill-current')} />
+          <Heart className={cn('h-5 w-5 transition-all', favorite && 'fill-current')} />
         </Button>
         <Image
           src={property.images[0]}
           alt={property.title}
           width={400}
           height={300}
-          className={cn("object-cover w-full transition-transform duration-300 group-hover:scale-105", view === 'grid' ? 'aspect-[4/3]' : 'aspect-video md:aspect-[4/3]')}
+          className={cn("object-cover w-full transition-transform duration-500 group-hover:scale-110", view === 'grid' ? 'aspect-[4/3]' : 'aspect-video md:aspect-[4/3]')}
           data-ai-hint="house exterior"
         />
       </div>
-      <CardContent className={cn("p-4 flex flex-col flex-grow", view === 'list' ? 'md:w-2/3' : '')}>
+      <CardContent className={cn("p-4 flex flex-col flex-grow", view === 'list' ? 'md:w-2/3 justify-between' : '')}>
         <div className="flex-grow">
           <p className="font-headline text-2xl font-bold text-primary">
             {formatPrice(property.price)}
@@ -99,8 +100,14 @@ export default function PropertyCard({ property, view = 'grid' }: PropertyCardPr
   );
 
   return (
-    <Link href={`/properties/${property.id}`} className="group block">
-      {content}
+    <Link href={`/properties/${property.id}`} className="group block h-full">
+      <motion.div 
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.2 }}
+        className="h-full"
+      >
+        {content}
+      </motion.div>
     </Link>
   );
 }

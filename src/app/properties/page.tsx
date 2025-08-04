@@ -6,10 +6,11 @@ import PropertyCard from '@/components/property-card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const propertyTypes = ['All', ...Array.from(new Set(allProperties.map(p => p.type)))];
 const bedroomOptions = ['Any', '1', '2', '3', '4', '5+'];
@@ -47,6 +48,13 @@ export default function PropertiesPage() {
     return `$${price}`;
   };
 
+  const resetFilters = () => {
+    setPropertyType('All');
+    setBedrooms('Any');
+    setPriceRange([0, maxPrice]);
+    setSortBy('price-desc');
+  };
+
   return (
     <div className="container py-12">
       <div className="text-center mb-12">
@@ -55,11 +63,14 @@ export default function PropertiesPage() {
       </div>
       
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar */}
         <aside className="lg:w-1/4">
-          <Card className="sticky top-24">
-            <CardHeader>
+          <Card className="sticky top-24 shadow-md rounded-lg">
+            <CardHeader className='flex-row items-center justify-between'>
               <CardTitle>Filter & Sort</CardTitle>
+              <Button variant="ghost" size="sm" onClick={resetFilters}>
+                <X className="mr-2 h-4 w-4"/>
+                Reset
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -107,32 +118,49 @@ export default function PropertiesPage() {
           </Card>
         </aside>
 
-        {/* Listings */}
         <main className="flex-1">
           <div className="flex justify-between items-center mb-6">
             <p className="text-muted-foreground">{filteredProperties.length} results found</p>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setView('grid')} className={cn(view === 'grid' && 'bg-accent')}>
+              <Button variant="ghost" size="icon" onClick={() => setView('grid')} className={cn(view === 'grid' && 'bg-accent text-accent-foreground')}>
                 <LayoutGrid className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setView('list')} className={cn(view === 'list' && 'bg-accent')}>
+              <Button variant="ghost" size="icon" onClick={() => setView('list')} className={cn(view === 'list' && 'bg-accent text-accent-foreground')}>
                 <List className="h-5 w-5" />
               </Button>
             </div>
           </div>
           
-          {filteredProperties.length > 0 ? (
-             <div className={cn('grid gap-6', view === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
-               {filteredProperties.map(prop => (
-                 <PropertyCard key={prop.id} property={prop} view={view} />
-               ))}
-             </div>
-          ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
-              <h3 className="text-xl font-semibold">No Properties Found</h3>
-              <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
-            </div>
-          )}
+          <AnimatePresence>
+            {filteredProperties.length > 0 ? (
+               <motion.div
+                 layout
+                 className={cn('grid gap-6', view === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1')}>
+                 <AnimatePresence>
+                   {filteredProperties.map(prop => (
+                     <motion.div
+                       key={prop.id}
+                       layout
+                       initial={{ opacity: 0, y: 20 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       exit={{ opacity: 0, y: -20 }}
+                       transition={{ duration: 0.3 }}
+                     >
+                       <PropertyCard property={prop} view={view} />
+                     </motion.div>
+                   ))}
+                 </AnimatePresence>
+               </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-16 border-2 border-dashed rounded-lg">
+                <h3 className="text-xl font-semibold">No Properties Found</h3>
+                <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </div>
