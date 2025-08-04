@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { properties } from '@/data/properties';
@@ -23,19 +24,64 @@ const areaGuides = [
     { name: 'Suburban Springfield', description: 'Quiet, family-friendly neighborhoods.', imageUrl: 'https://placehold.co/400x500/FAFAFA/333?text=Suburbia', link: '/properties' },
 ]
 
-export default function Home() {
+type StrapiImage = {
+  url: string;
+};
+
+type StrapiHomepageData = {
+  data: {
+    id: number;
+    hero_desktop_image: StrapiImage[];
+    hero_mobile_image: StrapiImage[];
+  };
+};
+
+export default async function Home() {
+  let desktopHeroImageUrl = "https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture";
+  let mobileHeroImageUrl = "https://placehold.co/800x1080/000000/FFF?text=Modern+Architecture";
+  
+  try {
+    const res = await fetch('https://cms.authenticholidayhomes.ae/api/Homepage?populate=*', {
+      next: { revalidate: 3600 } // Revalidate every hour
+    });
+    const strapiData: StrapiHomepageData = await res.json();
+    
+    if (strapiData.data?.hero_desktop_image?.[0]?.url) {
+      desktopHeroImageUrl = `https://cms.authenticholidayhomes.ae${strapiData.data.hero_desktop_image[0].url}`;
+    }
+    
+    if (strapiData.data?.hero_mobile_image?.[0]?.url) {
+      mobileHeroImageUrl = `https://cms.authenticholidayhomes.ae${strapiData.data.hero_mobile_image[0].url}`;
+    }
+  } catch (error) {
+    console.error("Failed to fetch Strapi data:", error);
+    // It will use the placeholder URLs in case of an error
+  }
+
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white">
+      <section className="relative h-screen flex items-center justify-center text-center text-white">
+        {/* Desktop Image */}
         <Image
-          src="https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture"
+          src={desktopHeroImageUrl}
           alt="Modern home exterior"
           layout="fill"
           objectFit="cover"
-          className="z-0"
+          className="z-0 hidden md:block"
           priority
           data-ai-hint="modern architecture"
+        />
+        {/* Mobile Image */}
+        <Image
+          src={mobileHeroImageUrl}
+          alt="Modern home exterior"
+          layout="fill"
+          objectFit="cover"
+          className="z-0 md:hidden"
+          priority
+          data-ai-hint="modern architecture tall"
         />
         <div className="absolute inset-0 bg-black/50 z-10"></div>
         <div className="z-20 container px-4">
