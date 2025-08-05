@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { properties } from '@/data/properties';
@@ -26,77 +30,91 @@ const areaGuides = [
     { name: 'Suburban Springfield', description: 'Quiet, family-friendly neighborhoods.', imageUrl: 'https://placehold.co/400x500/FAFAFA/333?text=Suburbia', link: '/properties' },
 ]
 
-async function fetchHeroData() {
-  try {
-    const res = await fetch(`${strapiBaseUrl}/api/homepage?populate=*`, {
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch: ${res.status}`);
-    }
-    const response = await res.json();
-    const attributes = response?.data?.attributes;
-
-    const getUrl = (media: any) => {
-        if (!media?.data?.attributes?.url) return null;
-        return `${strapiBaseUrl}${media.data.attributes.url}`;
-    };
-    
-    const getUrls = (media: any) => {
-        if (!media?.data) return [];
-        return media.data.map((img: any) => `${strapiBaseUrl}${img?.attributes?.url}`);
-    };
-
-    return {
-      desktopImages: getUrls(attributes?.hero_desktop_image),
-      desktopVideo: getUrl(attributes?.hero_desktop_video),
-    };
-  } catch (error) {
-    console.error("Hero section fetch failed:", error);
-    return {
-      desktopImages: ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'],
-      desktopVideo: null,
-    };
-  }
+interface HeroData {
+  desktopImages: string[];
+  desktopVideo: string | null;
 }
 
-export default async function Home() {
-  const hero = await fetchHeroData();
+export default function Home() {
+  const [hero, setHero] = useState<HeroData>({ desktopImages: [], desktopVideo: null });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchHeroData() {
+      try {
+        const res = await fetch(`${strapiBaseUrl}/api/homepage?populate=*`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.status}`);
+        }
+        const response = await res.json();
+        const attributes = response?.data?.attributes;
+
+        const getUrl = (media: any) => {
+          if (!media?.data?.attributes?.url) return null;
+          return `${strapiBaseUrl}${media.data.attributes.url}`;
+        };
+        
+        const getUrls = (media: any) => {
+          if (!media?.data) return [];
+          return media.data.map((img: any) => `${strapiBaseUrl}${img?.attributes?.url}`);
+        };
+
+        setHero({
+          desktopImages: getUrls(attributes?.hero_desktop_image),
+          desktopVideo: getUrl(attributes?.hero_desktop_video),
+        });
+      } catch (error) {
+        console.error("Hero section fetch failed:", error);
+        setHero({
+          desktopImages: ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'],
+          desktopVideo: null,
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchHeroData();
+  }, []);
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative h-screen w-full overflow-hidden text-white">
         {/* Background content */}
-        {hero.desktopVideo ? (
-          <video
-            src={hero.desktopVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover z-0"
-          />
-        ) : (
-          <Carousel
-            className="absolute inset-0 w-full h-full z-0"
-            plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
-            opts={{ loop: true }}
-          >
-            <CarouselContent className="h-full">
-              {(hero.desktopImages.length > 0 ? hero.desktopImages : ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture']).map((url, i) => (
-                <CarouselItem key={i} className="relative h-full">
-                  <Image
-                    src={url}
-                    alt={`Hero image ${i + 1}`}
-                    fill
-                    className="object-cover"
-                    priority={i === 0}
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
+        {!loading && (
+          <>
+            {hero.desktopVideo ? (
+              <video
+                src={hero.desktopVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
+            ) : (
+              <Carousel
+                className="absolute inset-0 w-full h-full z-0"
+                plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+                opts={{ loop: true }}
+              >
+                <CarouselContent className="h-full">
+                  {(hero.desktopImages.length > 0 ? hero.desktopImages : ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture']).map((url, i) => (
+                    <CarouselItem key={i} className="relative h-full">
+                      <Image
+                        src={url}
+                        alt={`Hero image ${i + 1}`}
+                        fill
+                        className="object-cover"
+                        priority={i === 0}
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            )}
+          </>
         )}
 
         {/* Overlay */}
