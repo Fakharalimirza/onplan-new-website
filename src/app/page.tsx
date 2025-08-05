@@ -27,16 +27,26 @@ async function getHeroData() {
       throw new Error(`Failed to fetch: ${res.status}`);
     }
     const response = await res.json();
-    const attributes = response?.data?.attributes;
+    const data = response?.data;
+    const attributes = data?.attributes ?? data;
 
     const getUrl = (media: any) => {
-      if (!media?.data?.attributes?.url) return null;
-      return `${strapiBaseUrl}${media.data.attributes.url}`;
+      if (!media) return null;
+      if (media.url) return `${strapiBaseUrl}${media.url}`;
+      if (media.data?.attributes?.url) return `${strapiBaseUrl}${media.data.attributes.url}`;
+      if (media.data?.url) return `${strapiBaseUrl}${media.data.url}`;
+      return null;
     };
-    
+
     const getUrls = (media: any) => {
-      if (!media?.data) return [];
-      return media.data.map((img: any) => `${strapiBaseUrl}${img?.attributes?.url}`);
+      if (!media) return [];
+      if (Array.isArray(media)) {
+        return media.map(item => getUrl(item)).filter(Boolean);
+      }
+      if (Array.isArray(media.data)) {
+        return media.data.map((img: any) => getUrl(img)).filter(Boolean);
+      }
+      return [];
     };
 
     return {
