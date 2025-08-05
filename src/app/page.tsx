@@ -1,8 +1,6 @@
 
 import HomeClient from '@/components/home-client';
 import { properties } from '@/data/properties';
-import { TestimonialCard } from '@/components/testimonial-card';
-import { AreaGuideCard } from '@/components/area-guide-card';
 
 const strapiBaseUrl = 'https://cms.authenticholidayhomes.ae';
 
@@ -22,30 +20,43 @@ const areaGuides = [
 
 async function getHeroData() {
   try {
-    const res = await fetch(`${strapiBaseUrl}/api/homepage?populate=*`, { cache: 'no-store' });
+    const res = await fetch(`${strapiBaseUrl}/api/homepage?populate[Hero][populate]=*`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Failed to fetch: ${res.status}`);
     }
     const response = await res.json();
-    const attributes = response?.data?.attributes;
+    const data = response?.data;
+    const root = data?.attributes ?? data;
+    const hero = Array.isArray(root?.Hero) ? root.Hero[0] : root;
 
     const getUrl = (media: any) => {
-      if (!media?.data?.attributes?.url) return null;
-      return `${strapiBaseUrl}${media.data.attributes.url}`;
+      if (!media) return null;
+      const item = Array.isArray(media) ? media[0] : media;
+      if (!item) return null;
+      if (item.url) return `${strapiBaseUrl}${item.url}`;
+      if (item.attributes?.url) return `${strapiBaseUrl}${item.attributes.url}`;
+      if (item.data?.attributes?.url) return `${strapiBaseUrl}${item.data.attributes.url}`;
+      if (item.data?.url) return `${strapiBaseUrl}${item.data.url}`;
+      return null;
     };
-    
+
     const getUrls = (media: any) => {
-      if (!media?.data) return [];
-      return media.data.map((img: any) => `${strapiBaseUrl}${img?.attributes?.url}`);
+      if (!media) return [];
+      if (Array.isArray(media)) {
+        return media.map(item => getUrl(item)).filter(Boolean);
+      }
+      if (Array.isArray(media.data)) {
+        return media.data.map((img: any) => getUrl(img)).filter(Boolean);
+      }
+      return [];
     };
 
     return {
-      desktopImages: getUrls(attributes?.hero_desktop_image),
-      desktopVideo: getUrl(attributes?.hero_desktop_video),
+      desktopImages: getUrls(hero?.hero_desktop_image),
+      desktopVideo: getUrl(hero?.hero_desktop_video),
     };
   } catch (error) {
-    console.error("Hero section fetch failed:", error);
-    // Return a default structure on error
+    console.error('Hero section fetch failed:', error);
     return {
       desktopImages: ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'],
       desktopVideo: null,
