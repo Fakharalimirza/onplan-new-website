@@ -182,7 +182,10 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+    // The listener should only be registered once on mount.
+    // Using an empty dependency array prevents duplicating listeners
+    // whenever the toast state updates.
+  }, [])
 
   return {
     ...state,
