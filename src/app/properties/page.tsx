@@ -98,7 +98,7 @@ export default function PropertiesPage() {
                   max={maxPrice}
                   step={50000}
                   value={priceRange}
-                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                  onValueChange={(value) => setPriceRange(value)}
                   className="w-full"
                 />
               </div>
