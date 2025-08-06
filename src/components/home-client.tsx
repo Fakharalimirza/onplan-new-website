@@ -30,7 +30,7 @@ export default function HomeClient({ heroData, featuredProperties, testimonials,
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative h-screen w-full overflow-hidden text-white">
-        {/* Background content */}
+        {/* Background content with video > images > placeholder fallback */}
         {heroData.desktopVideo ? (
           <video
             src={heroData.desktopVideo}
@@ -40,14 +40,14 @@ export default function HomeClient({ heroData, featuredProperties, testimonials,
             playsInline
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
-        ) : (
+        ) : heroData.desktopImages.length > 0 ? (
           <Carousel
             className="absolute inset-0 w-full h-full z-0"
             plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
             opts={{ loop: true }}
           >
             <CarouselContent className="h-full">
-              {(heroData.desktopImages.length > 0 ? heroData.desktopImages : ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture']).map((url, i) => (
+              {heroData.desktopImages.map((url, i) => (
                 <CarouselItem key={i} className="relative h-full">
                   <Image
                     src={url}
@@ -60,6 +60,14 @@ export default function HomeClient({ heroData, featuredProperties, testimonials,
               ))}
             </CarouselContent>
           </Carousel>
+        ) : (
+          <Image
+            src="https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture"
+            alt="Hero placeholder image"
+            fill
+            className="absolute inset-0 w-full h-full object-cover z-0"
+            priority
+          />
         )}
 
         {/* Overlay */}
