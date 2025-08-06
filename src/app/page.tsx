@@ -1,64 +1,117 @@
-
 import HomeClient from '@/components/home-client';
 import { properties } from '@/data/properties';
-import { TestimonialCard } from '@/components/testimonial-card';
-import { AreaGuideCard } from '@/components/area-guide-card';
 
 const strapiBaseUrl = 'https://cms.authenticholidayhomes.ae';
 
 const featuredProperties = properties.filter(p => p.featured).slice(0, 3);
 
 const testimonials = [
-  { name: 'Alice Johnson', title: 'First-time Home Buyer', quote: 'OnPlan made our dream a reality. The team was supportive and professional throughout the entire process. We couldn\'t be happier!', avatar: 'https://placehold.co/100x100', rating: 5 },
-  { name: 'Mark Smith', title: 'Investor', quote: 'An exceptional experience from start to finish. Their market knowledge and negotiation skills are top-notch. Highly recommended for any real estate needs.', avatar: 'https://placehold.co/100x100', rating: 5 },
-  { name: 'Sophia Rodriguez', title: 'Renter', quote: 'Finding a rental in this market was tough, but OnPlan found us the perfect apartment within our budget. The process was surprisingly smooth.', avatar: 'https://placehold.co/100x100', rating: 5 },
+  {
+    name: 'Alice Johnson',
+    title: 'First-time Home Buyer',
+    quote: 'OnPlan made our dream a reality. The team was supportive and professional throughout the entire process. We couldn\'t be happier!',
+    avatar: 'https://placehold.co/100x100',
+    rating: 5,
+  },
+  {
+    name: 'Mark Smith',
+    title: 'Investor',
+    quote: 'An exceptional experience from start to finish. Their market knowledge and negotiation skills are top-notch. Highly recommended for any real estate needs.',
+    avatar: 'https://placehold.co/100x100',
+    rating: 5,
+  },
+  {
+    name: 'Sophia Rodriguez',
+    title: 'Renter',
+    quote: 'Finding a rental in this market was tough, but OnPlan found us the perfect apartment within our budget. The process was surprisingly smooth.',
+    avatar: 'https://placehold.co/100x100',
+    rating: 5,
+  },
 ];
 
 const areaGuides = [
-    { name: 'Downtown Metropolis', description: 'Vibrant city life with endless amenities.', imageUrl: 'https://placehold.co/400x500/FBC700/FFF?text=Downtown', link: '/properties' },
-    { name: 'Coastal Malibu', description: 'Luxurious living with breathtaking ocean views.', imageUrl: 'https://placehold.co/400x500/74B7FF/FFF?text=Malibu', link: '/properties' },
-    { name: 'Suburban Springfield', description: 'Quiet, family-friendly neighborhoods.', imageUrl: 'https://placehold.co/400x500/FAFAFA/333?text=Suburbia', link: '/properties' },
+  {
+    name: 'Downtown Metropolis',
+    description: 'Vibrant city life with endless amenities.',
+    imageUrl: 'https://placehold.co/400x500/FBC700/FFF?text=Downtown',
+    link: '/properties',
+  },
+  {
+    name: 'Coastal Malibu',
+    description: 'Luxurious living with breathtaking ocean views.',
+    imageUrl: 'https://placehold.co/400x500/74B7FF/FFF?text=Malibu',
+    link: '/properties',
+  },
+  {
+    name: 'Suburban Springfield',
+    description: 'Quiet, family-friendly neighborhoods.',
+    imageUrl: 'https://placehold.co/400x500/FAFAFA/333?text=Suburbia',
+    link: '/properties',
+  },
 ];
 
 async function getHeroData() {
   try {
-    const res = await fetch(`${strapiBaseUrl}/api/homepage?populate=*`, { cache: 'no-store' });
+    const res = await fetch(`${strapiBaseUrl}/api/homepage?populate[Hero][populate]=*`, {
+      cache: 'no-store',
+    });
+
     if (!res.ok) {
       throw new Error(`Failed to fetch: ${res.status}`);
     }
+
     const response = await res.json();
     const data = response?.data;
     const attributes = data?.attributes ?? data;
+    const hero = Array.isArray(attributes?.Hero) ? attributes.Hero[0] : attributes;
 
     const getUrl = (media: any) => {
       if (!media) return null;
-      if (media.url) return `${strapiBaseUrl}${media.url}`;
-      if (media.data?.attributes?.url) return `${strapiBaseUrl}${media.data.attributes.url}`;
-      if (media.data?.url) return `${strapiBaseUrl}${media.data.url}`;
+      const item = Array.isArray(media) ? media[0] : media;
+      if (!item) return null;
+      if (item.url) return `${strapiBaseUrl}${item.url}`;
+      if (item.attributes?.url) return `${strapiBaseUrl}${item.attributes.url}`;
+      if (item.data?.attributes?.url) return `${strapiBaseUrl}${item.data.attributes.url}`;
+      if (item.data?.url) return `${strapiBaseUrl}${item.data.url}`;
       return null;
     };
 
     const getUrls = (media: any) => {
       if (!media) return [];
       if (Array.isArray(media)) {
-        return media.map(item => getUrl(item)).filter(Boolean);
+        return media.map(getUrl).filter(Boolean);
       }
       if (Array.isArray(media.data)) {
-        return media.data.map((img: any) => getUrl(img)).filter(Boolean);
+        return media.data.map(getUrl).filter(Boolean);
       }
-      return [];
+      const url = getUrl(media);
+      return url ? [url] : [];
     };
 
-    return {
-      desktopImages: getUrls(attributes?.hero_desktop_image),
-      desktopVideo: getUrl(attributes?.hero_desktop_video),
-    };
-  } catch (error) {
-    console.error("Hero section fetch failed:", error);
-    // Return a default structure on error
-    return {
-      desktopImages: ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'],
+    const desktopVideo = getUrl(hero?.hero_desktop_video);
+    const desktopImages = getUrls(hero?.hero_desktop_image);
+
+    // Your display logic in one place
+    const heroData = {
       desktopVideo: null,
+      desktopImages: [],
+    };
+
+    if (desktopVideo) {
+      heroData.desktopVideo = desktopVideo;
+    } else if (desktopImages.length > 0) {
+      heroData.desktopImages = desktopImages;
+    } else {
+      heroData.desktopImages = ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'];
+    }
+
+    return heroData;
+
+  } catch (error) {
+    console.error('Hero section fetch failed:', error);
+    return {
+      desktopVideo: null,
+      desktopImages: ['https://placehold.co/1920x1080/000000/FFF?text=Modern+Architecture'],
     };
   }
 }
